@@ -29,6 +29,21 @@
 .dc-add { display: flex; gap: var(--space-xs); min-width: 0; }
 .dc-add .cl-cwin-input { flex: 1; min-width: 0; }
 
+/* ---- the gradient editor ---- */
+.dc-grad { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-xs) 0 var(--space-xs) var(--space-sm); border-left: 2px solid var(--cl-elev-hairline); }
+.dc-grad-preview { block-size: 14px; border-radius: var(--radius-sm); border: 1px solid var(--cl-elev-hairline); background-size: 100% 100%; }
+.dc-stops { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-xs); min-width: 0; }
+.dc-stop { position: relative; display: inline-flex; }
+.dc-stop-drop {
+    position: absolute; inset-block-start: -6px; inset-inline-end: -6px; inline-size: 16px; block-size: 16px;
+    display: grid; place-items: center; padding: 0; border-radius: 50%; font-size: 9px; cursor: pointer;
+    background: var(--cl-elev-2, var(--bg-secondary)); color: var(--text-secondary); border: 1px solid var(--cl-elev-hairline);
+}
+.dc-stop-drop:hover { color: var(--cl-error-pale); border-color: var(--cl-error); }
+.dc-stop-add { padding-inline: var(--space-sm); }
+.dc-grad input[type="range"] { accent-color: var(--accent); }
+html.cl-mobile .dc-stop-drop { inline-size: 22px; block-size: 22px; inset-block-start: -9px; inset-inline-end: -9px; }
+
 /* ---- who says what ---- */
 .dc-seg-list { display: flex; flex-direction: column; gap: var(--space-xs); max-height: 60vh; overflow-y: auto; }
 .dc-seg { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }

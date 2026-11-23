@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { addSpeaker, applyPreset, buildStylesheet, nextColor, normalizeRegistry, recolorAll, resolveKey, speakerClass } from '../client/core/registry.js';
+import { addSpeaker, applyPreset, buildStylesheet, editGradient, startGradient, nextColor, normalizeRegistry, recolorAll, resolveKey, speakerClass } from '../client/core/registry.js';
 import { cardRegistry, emptyDoc, normalizeDoc, overridesFor, setOverrides, updateEntry } from '../client/core/store.js';
 import { attribute, expandNames, paintBody } from '../client/core/paint.js';
 import { colorDistanceOklab } from '../client/vendor/dialogue-colors/gradients.js';
@@ -61,6 +61,32 @@ test('the stylesheet paints solid colours, gradients and their motion, and outwe
     assert.match(css, /animation: dc-gradient-drift 10s linear infinite alternate-reverse/, 'aurora-drift moves, reversed');
     assert.doesNotMatch(buildStylesheet([reg], digest, { animate: false }), /animation:/, 'the setting stills every gradient');
     assert.match(a, /^dc-s-[0-9a-f]{8}$/, 'no name reaches a selector');
+});
+
+test('a gradient of the reader\'s own: up to five colours spread evenly, shape, direction and speed', () => {
+    const entry = { name: 'Bob', color: '#ff0000' };
+    let g = startGradient(entry);
+    assert.equal(g.type, 'linear');
+    assert.equal(g.stops.length, 1);
+    assert.equal(g.stops[0].position, 100);
+    for (let i = 0; i < 6; i++) g = editGradient(g, { kind: 'add' });
+    assert.deepEqual(g.stops.map(s => s.position), [25, 50, 75, 100], 'the speaker\'s colour and four more at most, evenly spread');
+    g = editGradient(g, { kind: 'stop', index: 1, color: '#00ff00' });
+    assert.equal(g.stops[1].color, '#00ff00');
+    g = editGradient(g, { kind: 'drop', index: 0 });
+    assert.deepEqual(g.stops.map(s => s.color).slice(0, 1), ['#00ff00']);
+    assert.deepEqual(g.stops.map(s => s.position), [33, 67, 100]);
+    g = editGradient(g, { kind: 'type', value: 'conic' });
+    g = editGradient(g, { kind: 'angle', value: '45' });
+    g = editGradient(g, { kind: 'speed', value: '999' });
+    assert.equal(g.type, 'conic');
+    assert.equal(g.angle, 45);
+    assert.equal(g.animation.duration, 120, 'the original\'s clamp');
+    assert.equal(editGradient(g, { kind: 'type', value: 'url(x)' }).type, 'conic', 'an unknown shape is refused');
+    let one = startGradient(entry);
+    assert.equal(editGradient(one, { kind: 'drop', index: 0 }).stops.length, 1, 'the last extra colour stays');
+    const css = buildStylesheet([{ bob: { ...entry, gradient: g } }], digest);
+    assert.match(css, /conic-gradient\(from 45deg at 50% 50%, #ff0000 0%, #00ff00 33%/);
 });
 
 // ---------- the document ----------

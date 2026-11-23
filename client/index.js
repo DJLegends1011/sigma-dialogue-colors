@@ -5,11 +5,11 @@
 
 import { cardRegistry, emptyDoc, normalizeDoc, overridesFor, setOverrides, updateEntry } from './core/store.js';
 import {
-    GRADIENT_PRESET_NAMES, PALETTE_NAMES, addSpeaker, applyPreset, buildStylesheet, randomGradient,
-    recolorAll, resolveKey, speakerClass,
+    GRADIENT_KINDS, GRADIENT_PRESET_NAMES, MAX_OWN_STOPS, PALETTE_NAMES, addSpeaker, applyPreset, buildStylesheet,
+    editGradient, randomGradient, recolorAll, resolveKey, speakerClass, startGradient,
 } from './core/registry.js';
 import { attribute, expandNames, paintBody } from './core/paint.js';
-import { normalizeGradient } from './vendor/dialogue-colors/gradients.js';
+import { buildGradientCss, normalizeGradient } from './vendor/dialogue-colors/gradients.js';
 
 const ID = 'dialogue-colors';
 const STYLE_ID = 'dc-speaker-styles';
@@ -137,11 +137,51 @@ function gradientChoice(entry) {
     return entry.gradientPreset || 'custom';
 }
 
+// the gradient's own controls: its colours after the speaker's, its shape and its motion
+function editorHtml(entry, g) {
+    const css = buildGradientCss(entry) || entry.color;
+    const stops = g.stops.map((st, i) => `
+        <span class="dc-stop">
+            <input type="color" class="dc-color" data-dc="stop" data-i="${i}" value="${esc(st.color)}" aria-label="Gradient colour ${i + 2}">
+            ${g.stops.length > 1 ? `<button type="button" class="dc-stop-drop" data-dc="drop" data-i="${i}" title="Remove this colour" aria-label="Remove colour ${i + 2}"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>` : ''}
+        </span>`).join('');
+    const angled = g.type !== 'radial';
+    return `
+        <div class="dc-grad">
+            <div class="dc-grad-preview" style="background-image: ${esc(css)}"></div>
+            <div class="cl-cwin-field">
+                <span class="cl-cwin-field-label">Colours</span>
+                <span class="dc-stops">
+                    <span class="dc-stop"><input type="color" class="dc-color" data-dc="color" value="${esc(entry.color)}" aria-label="Gradient colour 1 (the speaker's colour)" title="The speaker's colour"></span>
+                    ${stops}
+                    ${g.stops.length < MAX_OWN_STOPS ? '<button type="button" class="cl-cwin-btn-text dc-stop-add" data-dc="add-stop" title="Add a colour" aria-label="Add a colour"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>' : ''}
+                </span>
+            </div>
+            <div class="cl-cwin-field">
+                <span class="cl-cwin-field-label">Shape</span>
+                <select class="cl-select-fluid cl-cwin-field-control" data-dc="gtype">${GRADIENT_KINDS.map(k => `<option value="${k}"${k === g.type ? ' selected' : ''}>${k === 'linear' ? 'Linear' : k === 'radial' ? 'Radial' : 'Conic (sweep)'}</option>`).join('')}</select>
+            </div>
+            <div class="cl-cwin-field${angled ? '' : ' is-off'}">
+                <span class="cl-cwin-field-label">Direction <span class="cl-cwin-dim" data-dc-readout="angle">${Math.round(g.angle)}°</span></span>
+                <input type="range" class="cl-cwin-field-control" data-dc="angle" min="0" max="360" step="5" value="${Math.round(g.angle)}"${angled ? '' : ' disabled'}>
+            </div>
+            <label class="cl-cwin-field cl-cwin-toggle">
+                <span class="cl-cwin-field-label">Animate</span>
+                <input type="checkbox" class="cl-switch-input" data-dc="animate"${g.animation.enabled ? ' checked' : ''}><span class="cl-switch" aria-hidden="true"></span>
+            </label>
+            <div class="cl-cwin-field${g.animation.enabled ? '' : ' is-off'}">
+                <span class="cl-cwin-field-label">Speed <span class="cl-cwin-dim" data-dc-readout="speed">${g.animation.duration}s a sweep</span></span>
+                <input type="range" class="cl-cwin-field-control" data-dc="speed" min="2" max="30" step="1" value="${Math.round(g.animation.duration)}"${g.animation.enabled ? '' : ' disabled'}>
+            </div>
+        </div>`;
+}
+
 function rowHtml(key, entry) {
     const g = normalizeGradient(entry.gradient);
     const choice = gradientChoice(entry);
-    const options = ['<option value="">Solid colour</option>', '<option value="random">New random gradient</option>']
-        .concat(choice === 'custom' ? ['<option value="custom" selected>Custom gradient</option>'] : [])
+    const options = ['<option value="">Solid colour</option>',
+        `<option value="custom"${choice === 'custom' ? ' selected' : ''}>${choice === 'custom' ? 'My own gradient' : 'Make my own gradient'}</option>`,
+        '<option value="random">New random gradient</option>']
         .concat(GRADIENT_PRESET_NAMES.map(n => `<option value="${esc(n)}"${n === choice ? ' selected' : ''}>${esc(n.replace(/-/g, ' '))}</option>`))
         .join('');
     return `
@@ -156,13 +196,10 @@ function rowHtml(key, entry) {
                     <span class="cl-cwin-field-label">Gradient</span>
                     <select class="cl-select-fluid cl-cwin-field-control" data-dc="gradient">${options}</select>
                 </div>
-                <label class="cl-cwin-field cl-cwin-toggle${g ? '' : ' is-off'}">
-                    <span class="cl-cwin-field-label">Animate the gradient</span>
-                    <span><input type="checkbox" class="cl-switch-input" data-dc="animate"${g?.animation?.enabled ? ' checked' : ''}${g ? '' : ' disabled'}><span class="cl-switch" aria-hidden="true"></span></span>
-                </label>
+                ${g ? editorHtml(entry, g) : ''}
                 <label class="cl-cwin-field cl-cwin-toggle">
                     <span class="cl-cwin-field-label">Bold</span>
-                    <span><input type="checkbox" class="cl-switch-input" data-dc="bold"${entry.bold ? ' checked' : ''}><span class="cl-switch" aria-hidden="true"></span></span>
+                    <input type="checkbox" class="cl-switch-input" data-dc="bold"${entry.bold ? ' checked' : ''}><span class="cl-switch" aria-hidden="true"></span>
                 </label>
                 <div class="cl-cwin-field">
                     <span class="cl-cwin-field-label">Also called</span>
@@ -214,12 +251,38 @@ function wireWindow(body) {
         saveSoon();
         if (attribution) repaint();
     };
+    // a gradient's preview follows the drag; the speakers' stylesheet with it
+    const showPreview = (row, entry) => {
+        const box = row?.querySelector('.dc-grad-preview');
+        if (box) box.style.backgroundImage = buildGradientCss(entry) || entry.color;
+        for (const pick of row?.querySelectorAll('[data-dc="color"]') || []) if (pick.value !== entry.color) pick.value = entry.color;
+    };
+    const gradientChange = (el) => {
+        const d = el.dataset.dc;
+        if (d === 'stop') return { kind: 'stop', index: Number(el.dataset.i), color: el.value };
+        if (d === 'angle' || d === 'speed') return { kind: d, value: el.value };
+        return null;
+    };
     body.addEventListener('input', (e) => {
         const el = e.target;
-        if (el.dataset?.dc !== 'color') return;
-        const key = rowOf(el)?.dataset.key;
-        // a new base colour keeps the gradient's other stops
-        if (key && updateEntry(regNow(), key, { color: el.value })) refreshStyles();
+        const row = rowOf(el);
+        const key = row?.dataset.key;
+        const reg = regNow();
+        if (!key || !reg[key]) return;
+        if (el.dataset?.dc === 'color') {
+            // a new base colour keeps the gradient's other stops
+            if (updateEntry(reg, key, { color: el.value })) { refreshStyles(); showPreview(row, reg[key]); }
+            return;
+        }
+        const change = gradientChange(el);
+        if (!change) return;
+        const g = editGradient(reg[key].gradient, change);
+        if (!g) return;
+        updateEntry(reg, key, { gradient: g, gradientPreset: '' });
+        refreshStyles();
+        showPreview(row, reg[key]);
+        const readout = row.querySelector(`[data-dc-readout="${el.dataset.dc}"]`);
+        if (readout) readout.textContent = el.dataset.dc === 'angle' ? `${el.value}°` : `${el.value}s a sweep`;
     });
     body.addEventListener('change', (e) => {
         const el = e.target;
@@ -229,11 +292,20 @@ function wireWindow(body) {
         if (!entry) return;
         switch (el.dataset.dc) {
             case 'color': updateEntry(reg, key, { color: el.value }); changed(); break;
+            case 'stop': case 'angle': case 'speed': changed(); drawWindow(); break;
+            case 'gtype': {
+                const g = editGradient(entry.gradient, { kind: 'type', value: el.value });
+                if (g) updateEntry(reg, key, { gradient: g, gradientPreset: '' });
+                changed();
+                drawWindow();
+                break;
+            }
             case 'bold': updateEntry(reg, key, { bold: el.checked }); changed(); break;
             case 'animate': {
                 const g = normalizeGradient(entry.gradient);
                 if (g) updateEntry(reg, key, { gradient: { ...g, animation: { ...g.animation, enabled: el.checked } } });
                 changed();
+                drawWindow();
                 break;
             }
             case 'gradient': {
@@ -241,7 +313,8 @@ function wireWindow(body) {
                 let next = entry;
                 if (!v) next = { ...entry, gradient: null, gradientPreset: '' };
                 else if (v === 'random') next = { ...randomGradient(entry), gradientPreset: '' };
-                else if (v !== 'custom') next = { ...applyPreset(entry, v), gradientPreset: v };
+                else if (v === 'custom') next = { ...entry, gradient: entry.gradient || startGradient(entry), gradientPreset: '' };
+                else next = { ...applyPreset(entry, v), gradientPreset: v };
                 updateEntry(reg, key, next);
                 changed();
                 drawWindow();
@@ -266,6 +339,11 @@ function wireWindow(body) {
             const opening = more.classList.contains('cl-hidden');
             more.classList.toggle('cl-hidden', !opening);
             btn.setAttribute('aria-expanded', String(opening));
+        } else if ((btn.dataset.dc === 'add-stop' || btn.dataset.dc === 'drop') && key && reg[key]) {
+            const g = editGradient(reg[key].gradient, btn.dataset.dc === 'drop' ? { kind: 'drop', index: Number(btn.dataset.i) } : { kind: 'add' });
+            if (g) updateEntry(reg, key, { gradient: g, gradientPreset: '' });
+            changed();
+            drawWindow();
         } else if (btn.dataset.dc === 'remove' && key) {
             delete reg[key];
             changed({ attribution: true });

@@ -1,7 +1,7 @@
 {
     "id": "dialogue-colors",
     "name": "Dialogue Colors",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "author": "DJLegends",
     "description": "Gives each speaker's quotes and *thoughts* a colour or gradient of their own, worked out on your device from the text the chat shows: who said each line is guessed from speech tags, action beats and turn-taking, and you can correct any line. Nothing is written into your messages and nothing is sent to a model. A port of the Local DOM engine of platberlitz's Dialogue Colors for SillyTavern.",
     "requires": {

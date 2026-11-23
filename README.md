@@ -22,8 +22,9 @@ by platberlitz. Its speaker heuristics come along unchanged.
   line nobody can be matched to takes the message's own speaker.
 - **Keeps a speaker list per character card.** A name is added with a palette colour the first
   time it speaks. Add side characters yourself in the **Dialogue Colors** window (the palette
-  button in the conversation). There you can also change a colour, pick one of 37 gradients or
-  a random one, animate a gradient, make a speaker bold, and give nicknames ("Also called"),
+  button in the conversation). There you can also change a colour, make your own gradient (up to five
+  colours, linear, radial or sweep, any direction, animated at the speed you like), start from
+  one of 37 presets or a random one, make a speaker bold, and give nicknames ("Also called"),
   which count as the same speaker.
 - **Lets you correct a line.** Open a message's menu and pick **Who Says What** to reassign any
   quote. A reassignment lasts while the message's text stays the same: a swipe or an edit
@@ -63,7 +64,6 @@ which colour.
 - [ ] Colour a reply while it streams. Σ only runs `message.render` once a reply is stored, so a
       reply shows plain while it types and takes its colours when it lands. Waiting on a feature
       request.
-- [ ] A custom gradient editor (stops, angle, type); today it is presets and random.
 - [ ] Optional: the legend, per-chat lists, import/export, LLM speaker verification.
 
 ## Licence

@@ -175,3 +175,54 @@ export function buildStylesheet(registries, digest, { animate = true } = {}) {
     }
     return rules.join('\n');
 }
+
+// ---------- the reader's own gradient ----------
+
+export const MAX_OWN_STOPS = 4; // after the speaker's colour: the original's MAX_GRADIENT_SECONDARY_STOPS
+export const GRADIENT_KINDS = Object.freeze(['linear', 'radial', 'conic']);
+
+const hueShift = (hex, deg) => {
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    let h = 0, s = 0;
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        h = max === r ? ((g - b) / d + (g < b ? 6 : 0)) * 60 : max === g ? ((b - r) / d + 2) * 60 : ((r - g) / d + 4) * 60;
+    }
+    return hslToHex((h + deg) % 360, Math.round(s * 100), Math.round(l * 100));
+};
+
+/** The colours after the speaker's own, spread evenly from the speaker's colour at 0% to 100%. */
+export function withStops(gradient, colors) {
+    const list = colors.map(c => normalizeHexColor(c, null)).filter(Boolean).slice(0, MAX_OWN_STOPS);
+    if (!list.length) return null;
+    return normalizeGradient({
+        ...gradient,
+        primaryPosition: 0,
+        stops: list.map((color, i) => ({ color, baseColor: color, position: Math.round(((i + 1) / list.length) * 100) })),
+    });
+}
+
+/** A first gradient to start from: the speaker's colour into its neighbour on the colour wheel. */
+export function startGradient(entry) {
+    return withStops({ type: 'linear', angle: 90, x: 50, y: 50, animation: { enabled: false, duration: 8, reverse: false } }, [hueShift(entry.color, 60)]);
+}
+
+/** One of the gradient's settings changed; answers the new gradient (null when it has no stops). */
+export function editGradient(gradient, change) {
+    const g = normalizeGradient(gradient);
+    if (!g) return null;
+    const colors = g.stops.map(st => st.color);
+    switch (change.kind) {
+        case 'stop': colors[change.index] = change.color; return withStops(g, colors);
+        case 'add': return colors.length >= MAX_OWN_STOPS ? g : withStops(g, [...colors, hueShift(colors.at(-1), 45)]);
+        case 'drop': return colors.length <= 1 ? g : withStops(g, colors.filter((_, i) => i !== change.index));
+        case 'type': return GRADIENT_KINDS.includes(change.value) ? normalizeGradient({ ...g, type: change.value }) : g;
+        case 'angle': return normalizeGradient({ ...g, angle: Number(change.value) });
+        case 'speed': return normalizeGradient({ ...g, animation: { ...g.animation, duration: Number(change.value) } });
+        case 'reverse': return normalizeGradient({ ...g, animation: { ...g.animation, reverse: !!change.value } });
+        default: return g;
+    }
+}
