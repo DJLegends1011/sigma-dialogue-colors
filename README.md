@@ -6,6 +6,14 @@ text the chat already shows. A port of the **Local DOM engine** of
 [Dialogue Colors for SillyTavern](https://github.com/platberlitz/sillytavern-character-colors)
 by platberlitz. Its speaker heuristics come along unchanged.
 
+<table>
+<tr><th>Desktop</th><th>Phone</th></tr>
+<tr>
+<td><img src="docs/images/desktop.png" alt="A chat with each speaker's dialogue in its own colour, and the Dialogue Colors window listing the speakers" width="560"></td>
+<td><img src="docs/images/mobile.png" alt="The Dialogue Colors window on a phone" width="220"></td>
+</tr>
+</table>
+
 ## What it does
 
 - **Colours dialogue as the chat draws it.** Each `"quote"` and `*thought*` gets the colour of
