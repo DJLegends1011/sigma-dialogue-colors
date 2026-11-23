@@ -1,0 +1,41 @@
+/* Dialogue Colors. Each speaker's colour or gradient lives in a stylesheet the client writes
+   (#dc-speaker-styles); this sheet holds the motion and the extension's own window and dialog. */
+
+/* the original's drift (style.css, @keyframes dc-gradient-drift; MIT, see THIRD_PARTY_NOTICES.md) */
+@keyframes dc-gradient-drift {
+    0% { background-position: 0% 50%; }
+    33% { background-position: 100% 0%; }
+    66% { background-position: 0% 100%; }
+    100% { background-position: 100% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dc-q, .dc-preview { animation: none !important; background-position: 50% 50% !important; }
+}
+
+/* ---- the window ---- */
+.dc-win { display: flex; flex-direction: column; gap: var(--space-sm); min-width: 0; box-sizing: border-box; }
+.dc-rows { display: flex; flex-direction: column; }
+.dc-row-head { display: flex; align-items: center; gap: var(--space-sm); min-width: 0; }
+.dc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.dc-color {
+    inline-size: 28px; block-size: 28px; padding: 0; flex: none; cursor: pointer;
+    border: 1px solid var(--cl-elev-hairline); border-radius: var(--radius-sm); background: none;
+}
+.dc-color::-webkit-color-swatch-wrapper { padding: 2px; }
+.dc-color::-webkit-color-swatch { border: none; border-radius: calc(var(--radius-sm) - 2px); }
+.dc-row-more { display: flex; flex-direction: column; gap: var(--space-xs); padding-top: var(--space-xs); }
+.dc-row-verbs, .dc-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-xs); }
+.dc-add { display: flex; gap: var(--space-xs); min-width: 0; }
+.dc-add .cl-cwin-input { flex: 1; min-width: 0; }
+
+/* ---- who says what ---- */
+.dc-seg-list { display: flex; flex-direction: column; gap: var(--space-xs); max-height: 60vh; overflow-y: auto; }
+.dc-seg { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+.dc-seg-text { flex: 1 1 14em; min-width: 0; overflow-wrap: anywhere; }
+.dc-seg select, .dc-seg .custom-select-wrapper { flex: 0 1 12em; min-width: 0; }
+.dc-dialog-foot { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap; }
+
+@media (max-width: 520px) {
+    .dc-seg select, .dc-seg .custom-select-wrapper { flex-basis: 100%; }
+}
