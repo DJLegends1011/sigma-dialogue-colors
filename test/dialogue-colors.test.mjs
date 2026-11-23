@@ -166,6 +166,16 @@ test('in Σ: the extension boots, paints a rendered reply through message.render
         assert.ok(style, 'the stylesheet is on the page');
         assert.match(style.textContent, /\.dc-s-[0-9a-f]{8} \{ color: #[0-9a-f]{6};/);
 
+        // narration left uncoloured: the switch, since Σ reads an empty marks setting as its default '*'
+        page.settings['ext:dialogue-colors:thoughtSymbols'] = '';
+        page.settings['ext:dialogue-colors:colorThoughts'] = false;
+        const quotesOnly = page.registry.runFilter('message.render', BODY, { chatId: 'chat-1', charId: 'card-1', seq: 1, messageId: 1, message, format: s => s });
+        assert.match(quotesOnly, /class="cl-quote dc-q/);
+        assert.doesNotMatch(quotesOnly, /<em class="[^"]*dc-q/, 'narration stays the chat\'s own');
+        page.settings['ext:dialogue-colors:colorThoughts'] = true;
+        assert.match(page.registry.runFilter('message.render', BODY, { chatId: 'chat-1', charId: 'card-1', seq: 1, messageId: 1, message, format: s => s }), /<em class="[^"]*dc-q/,
+            'an empty marks box falls back to *');
+
         // a user's message is left alone until their name is in the list
         const mine = { name: 'Kai', is_user: true, mes: '"Hi."' };
         assert.equal(page.registry.runFilter('message.render', '<p><span class="cl-quote">&quot;Hi.&quot;</span></p>', { chatId: 'chat-1', charId: 'card-1', seq: 2, messageId: 2, message: mine, format: s => s }),

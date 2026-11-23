@@ -42,6 +42,8 @@ function isDark() {
 const paletteOpts = () => ({ theme: setting('palette'), dark: isDark() });
 
 function thoughtSymbols() {
+    // Σ reads an empty setting as its default, so "leave narration alone" is its own switch
+    if (setting('colorThoughts') === false) return '';
     // single characters only (the original's delimiter rule); letters and digits would split words
     return [...String(setting('thoughtSymbols') ?? '')].filter(c => c.trim() && !/[\p{L}\p{N}]/u.test(c)).slice(0, 4).join('');
 }
@@ -359,10 +361,11 @@ function drawSettings(el) {
             <label>Palette for new speakers</label>
             <select class="cl-select-fluid" data-dc-set="palette">${PALETTE_NAMES.map(n => `<option value="${n}"${n === setting('palette') ? ' selected' : ''}>${n[0].toUpperCase()}${n.slice(1)}</option>`).join('')}</select>
         </div>
+        ${sw('colorThoughts', 'Color narration and thoughts', 'Text between the marks below (*like this*) takes the speaker\'s colour too. Off colours quotes only.')}
         <div class="settings-row">
-            <label>Thought marks</label>
+            <label>Narration and thought marks</label>
             <input type="text" class="glass-input" data-dc-set="thoughtSymbols" maxlength="4" value="${esc(setting('thoughtSymbols'))}">
-            <span class="settings-hint">Text between these is colored too (*like this*). Leave empty to color quotes only.</span>
+            <span class="settings-hint">One or more single characters, * by default. Left empty, * is used.</span>
         </div>
         ${sw('animateGradients', 'Animate gradients', 'Off keeps every gradient still. Reduced motion on your device stills them anyway.')}
         ${sw('colorPersona', 'Add my persona automatically', 'Your own messages are colored once your name is in a card\'s list; this adds it the first time you speak.')}`;
@@ -374,7 +377,7 @@ function drawSettings(el) {
         if (t.type === 'checkbox') ctx.settings.set(key, t.checked);
         else if (key === 'thoughtSymbols') ctx.settings.set(key, [...t.value].filter(c => c.trim() && !/[\p{L}\p{N}]/u.test(c)).join(''));
         else ctx.settings.set(key, t.value);
-        if (key === 'enabled' || key === 'thoughtSymbols' || key === 'colorPersona') repaint();
+        if (['enabled', 'thoughtSymbols', 'colorThoughts', 'colorPersona'].includes(key)) repaint();
         refreshStyles();
         drawWindow();
     });

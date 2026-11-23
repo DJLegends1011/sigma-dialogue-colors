@@ -32,8 +32,8 @@ by platberlitz. Its speaker heuristics come along unchanged.
   hand, or switch on **Add my persona automatically** in Settings > Extensions.
 
 Settings > Extensions > Dialogue Colors: on/off, the palette for new speakers (17 palettes,
-including three for colour-blind readers), which marks count as thoughts (`*` by default; empty
-colours quotes only), and whether gradients move.
+including three for colour-blind readers), whether narration and thoughts (`*like this*`) are coloured or only quotes, which marks count as
+narration (`*` by default), and whether gradients move.
 
 ### Not in this version
 
